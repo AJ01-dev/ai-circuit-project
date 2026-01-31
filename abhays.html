@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AI Circuit Fault Detector</title>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 40px;
+      background: #f5f7fa;
+    }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      padding: 8px 16px;
+      margin-top: 10px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="box">
+    <h2>AI Circuit Fault Detector</h2>
+
+    <!-- Upload file -->
+    <h4>Upload circuit data (CSV)</h4>
+    <input type="file" id="file">
+    <button onclick="uploadFile()">Upload & Train</button>
+
+    <p id="trainResult"></p>
+
+    <hr>
+
+    <!-- Prediction -->
+    <h4>Test circuit</h4>
+    <input type="number" id="gain" placeholder="Enter gain">
+    <button onclick="predict()">Predict</button>
+
+    <p id="predResult"></p>
+  </div>
+
+<script>
+async function uploadFile() {
+  const file = document.getElementById("file").files[0]
+  if (!file) {
+    alert("Select a file first")
+    return
+  }
+
+  const fd = new FormData()
+  fd.append("file", file)
+
+  const res = await fetch("http://127.0.0.1:8000/upload", {
+    method: "POST",
+    body: fd
+  })
+
+  const data = await res.json()
+  document.getElementById("trainResult").innerText =
+    "Model trained with " + data.samples_added + " samples"
+}
+
+async function predict() {
+  const gain = document.getElementById("gain").value
+
+  const res = await fetch("http://127.0.0.1:8000/predict", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gain: Number(gain) })
+  })
+
+  const data = await res.json()
+  document.getElementById("predResult").innerHTML =
+    "<b>Prediction:</b> " + (data.prediction == 0 ? "OK" : "FAULT") +
+    "<br><b>Confidence:</b> " + (data.confidence * 100).toFixed(2) + "%"
+}
+</script>
+</body>
+</html>
